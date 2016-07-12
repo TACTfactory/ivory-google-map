@@ -21,8 +21,14 @@ use Ivory\GoogleMap\Services\BusinessAccount;
 use Ivory\GoogleMap\Services\Geocoding\Result\GeocoderAddressComponent;
 use Ivory\GoogleMap\Services\Geocoding\Result\GeocoderGeometry;
 use Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResponse;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlaceResponse;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlaceResult;
 use Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResult;
 use Ivory\GoogleMap\Services\Utils\XmlParser;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlacePhoto;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlaceOpeningHours;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlacePeriods;
+use Ivory\GoogleMap\Services\Geocoding\Result\PlaceOpenClose;
 
 /**
  * Geocoder provider.
@@ -46,6 +52,15 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     /** @var \Ivory\GoogleMap\Services\BusinessAccount */
     protected $businessAccount;
 
+    /** @var string */
+    protected $placeUrl;
+
+    /** @var string */
+    protected $placeUrlDetails;
+
+    /** @var string */
+    protected $type;
+
     /**
      * {@inheritdoc}
      */
@@ -54,6 +69,9 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         parent::__construct($adapter, $locale);
 
         $this->setUrl('http://maps.googleapis.com/maps/api/geocode');
+        $this->setPlaceUrl('https://maps.googleapis.com/maps/api/place/textsearch');
+        $this->setPlaceUrlDetails('https://maps.googleapis.com/maps/api/place/details');
+        $this->setType('default');
         $this->setHttps(false);
         $this->setFormat('json');
         $this->setXmlParser(new XmlParser());
@@ -87,6 +105,78 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         }
 
         $this->url = $url;
+    }
+
+    /**
+     * Gets the service place url according to the https flag.
+     *
+     */
+    public function getPlaceUrl()
+    {
+    	if ($this->isHttps()) {
+    		return str_replace('http://', 'https://', $this->placeUrl);
+    	}
+
+    	return $this->placeUrl;
+    }
+
+    /**
+     * Sets the service url.
+     *
+     * @param string $url The service url.
+     *
+     */
+    public function setPlaceUrl($placeUrl)
+    {
+    	if (!is_string($placeUrl)) {
+    		throw GeocodingException::invalidGeocoderProviderUrl();
+    	}
+
+    	$this->placeUrl = $placeUrl;
+    }
+
+    /**
+     * Gets the service place url according to the https flag.
+     *
+     */
+    public function getPlaceUrlDetails()
+    {
+    	if ($this->isHttps()) {
+    		return str_replace('http://', 'https://', $this->placeUrlDetails);
+    	}
+
+    	return $this->placeUrlDetails;
+    }
+
+    /**
+     * Sets the service url.
+     *
+     * @param string $url The service url.
+     *
+     */
+    public function setPlaceUrlDetails($placeUrlDetails)
+    {
+        $this->placeUrlDetails = $placeUrlDetails;
+    }
+
+    /**
+     * Get the type.
+     *
+     */
+    public function getType()
+    {
+    	return $this->type;
+    }
+
+    /**
+     * Set the type.
+     *
+     * @param string $type The service type.
+     *
+     */
+    public function setType($type)
+    {
+    	$this->type = $type;
     }
 
     /**
@@ -198,8 +288,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function getGeocodedData($request)
     {
-        if (is_string($request)) {
-            $geocoderRequest = new GeocoderRequest();
+    	$geocoderRequest = new GeocoderRequest();
+
+        if ($this->type == "place") {
+        	$geocoderRequest->setPlaceName($request);
+        } else if (is_string($request)) {
             $geocoderRequest->setAddress($request);
         } elseif ($request instanceof GeocoderRequest) {
             $geocoderRequest = $request;
@@ -220,7 +313,21 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         $normalizedResponse = $this->parse($response);
 
-        return $this->buildGeocoderResponse($normalizedResponse);
+        if ($this->getType() == "place") {
+            $geocoderRequest->setPlaceId($this->getPlaceId($normalizedResponse));
+
+        	$url = $this->generateUrl($geocoderRequest);
+
+        	$responseDetail = $this->getAdapter()->getContent($url);
+
+        	$dataResponse = $this->parse($responseDetail);
+
+        	$response = $this->buildPlaceResponse($dataResponse);
+        } else {
+        	$response = $this->buildGeocoderResponse($normalizedResponse);
+        }
+
+        return $response;
     }
 
     /**
@@ -252,10 +359,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     protected function generateUrl(GeocoderRequest $geocoderRequest)
     {
         $httpQuery = array();
+        $apiUrl = $this->getUrl();
 
         if ($geocoderRequest->hasAddress()) {
             $httpQuery['address'] = $geocoderRequest->getAddress();
-        } else {
+        } else if ($geocoderRequest->hasCoordinate()){
             $httpQuery['latlng'] = sprintf(
                 '%s,%s',
                 $geocoderRequest->getCoordinate()->getLatitude(),
@@ -281,9 +389,27 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $httpQuery['language'] = $geocoderRequest->getLanguage();
         }
 
-        $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
+        if ($geocoderRequest->hasPlaceId()) {
+        	$httpQuery['placeid'] = $geocoderRequest->getPlaceId();
+        }
 
-        $url = sprintf('%s/%s?%s', $this->getUrl(), $this->getFormat(), http_build_query($httpQuery));
+        if ($geocoderRequest->hasPlaceName() && !$geocoderRequest->hasPlaceId()) {
+        	$httpQuery['query'] = $geocoderRequest->getPlaceName();
+        }
+
+        if ($this->getType() == "default") {
+            $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
+        } else if ($this->getType() == "place") {
+            $httpQuery['key'] ="AIzaSyDHxld3QsfgnlHs9k2c9nPH4BVZzWlkb1U";
+
+            if ($geocoderRequest->hasPlaceId()) {
+            	$apiUrl = $this->getPlaceUrlDetails();
+            } else {
+                $apiUrl = $this->getPlaceUrl();
+            }
+        }
+
+        $url = sprintf('%s/%s?%s', $apiUrl, $this->getFormat(), http_build_query($httpQuery));
 
         return $this->signUrl($url);
     }
@@ -382,9 +508,10 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         $formattedAddress = $geocoderResult->formatted_address;
         $geometry = $this->buildGeocoderGeometry($geocoderResult->geometry);
         $types = $geocoderResult->types;
+        $placeId = $geocoderResult->place_id;
         $partialMatch = isset($geocoderResult->partial_match) ? $geocoderResult->partial_match : null;
 
-        return new GeocoderResult($addressComponents, $formattedAddress, $geometry, $types, $partialMatch);
+        return new GeocoderResult($addressComponents, $formattedAddress, $geometry, $types, $partialMatch, $placeId);
     }
 
     /**
@@ -436,7 +563,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $geocoderGeometry->location->lng
         );
 
-        $locationType = $geocoderGeometry->location_type;
+        if (isset($geocoderGeometry->location_type)) {
+            $locationType = $geocoderGeometry->location_type;
+        } else {
+            $locationType = null;
+        }
 
         $viewport = new Bound(
             new Coordinate($geocoderGeometry->viewport->southwest->lat, $geocoderGeometry->viewport->southwest->lng),
@@ -452,5 +583,158 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         }
 
         return new GeocoderGeometry($location, $locationType, $viewport, $bound);
+    }
+
+    /**
+     * Builds the gecoder address components according to a normalized geocoding address components.
+     *
+     * @param array $geocoderAddressComponents The normalized geocoder address components.
+     *
+     * @return array The builded geocoder address components.
+     */
+    protected function buildPlacePhotos(array $placePhotos)
+    {
+    	$results = array();
+
+    	foreach ($placePhotos as $placePhoto) {
+    		$results[] = $this->buildPlacePhotosComponent($placePhoto);
+    	}
+
+    	return $results;
+    }
+
+    /**
+     * Builds a geocoder address component according to a normalized geocoding address component.
+     *
+     * @param \stdClass $geocoderAddressComponent The normalized geocoder address component.
+     *
+     * @return \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderAddressComponent The builded geocoder address
+     *                                                                             component.
+     */
+    protected function buildPlacePhotosComponent(\stdClass $buildPlacePhotoComponent)
+    {
+    	$height = $buildPlacePhotoComponent->height;
+    	$width = $buildPlacePhotoComponent->width;
+    	$htmlAttribution = $buildPlacePhotoComponent->html_attributions;
+    	$photoReference = $buildPlacePhotoComponent->photo_reference;
+
+    	return new PlacePhoto($height, $width, $htmlAttribution, $photoReference);
+    }
+
+    /**
+     * Builds the gecoder address components according to a normalized geocoding address components.
+     *
+     * @param array $geocoderAddressComponents The normalized geocoder address components.
+     *
+     * @return array The builded geocoder address components.
+     */
+    protected function buildOpeningHours(\stdClass $placeResult)
+    {
+    	$results = array();
+
+    	$openNow = null;
+
+    	if (isset($placeResult->open_now)) {
+            $openNow = $placeResult->open_now;
+    	}
+
+    	foreach ($placeResult->periods as $openingHour) {
+    		$periods[] = $this->buildOpeningHoursComponent($openingHour);
+    	}
+
+    	return new PlaceOpeningHours($openNow, $periods, null);
+    }
+
+    /**
+     * Builds a opening hours component according to a normalized opening hour component.
+     *
+     * @param \stdClass $openingHoursComponent The normalized opening hour component.
+     *
+     * @return PlacePhoto The builded place photo
+     */
+    protected function buildOpeningHoursComponent(\stdClass $openingHoursComponent)
+    {
+        $open = new PlaceOpenClose($openingHoursComponent->open->day, $openingHoursComponent->open->time);
+        $close = new PlaceOpenClose($openingHoursComponent->close->day, $openingHoursComponent->close->time);
+
+        return new PlacePeriods($open, $close);
+    }
+
+    /**
+     * Builds the geocoder results accordint to a normalized geocoding results.
+     *
+     * @param \stdClass $geocoderResponse The normalized geocder response.
+     *
+     * @return \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResponse The builded geocoder response.
+     */
+    protected function getPlaceId(\stdClass $placeResponse)
+    {
+    	$results = array();
+    	$placeId = "";
+
+    	foreach ($placeResponse->results as $placeResult) {
+    		$placeId = $placeResult->place_id;
+    	}
+
+    	$status = $placeResponse->status;
+
+    	return $placeId;
+    }
+
+    /**
+     * Builds the geocoder results accordint to a normalized geocoding results.
+     *
+     * @param \stdClass $geocoderResponse The normalized geocder response.
+     *
+     * @return \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResponse The builded geocoder response.
+     */
+    protected function buildPlaceResponse(\stdClass $placeResponse)
+    {
+    	$results = array();
+
+    	$results[] = $this->buildPlaceResult($placeResponse->result);
+
+    	$status = $placeResponse->status;
+
+    	return new PlaceResponse($results, $status);
+    }
+
+    /**
+     * Builds a geocoder result according to a normalized geocoding result.
+     *
+     * @param \stdClass $geocoderResult The normalized geocoder result.
+     *
+     * @return \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResult The builded geocoder result.
+     */
+    protected function buildPlaceResult(\stdClass $placeResult)
+    {
+    	$addressComponents = $this->buildGeocoderAddressComponents($placeResult->address_components);
+    	$formattedAddress = $placeResult->formatted_address;
+    	$geometry = $this->buildGeocoderGeometry($placeResult->geometry);
+    	$types = $placeResult->types;
+    	$placeId = $placeResult->place_id;
+    	$icon = $placeResult->icon;
+    	$id = $placeResult->id;
+    	$name = $placeResult->name;
+    	$photos = $this->buildPlacePhotos($placeResult->photos);
+    	$reviews = $placeResult->reviews;
+    	$rating = $placeResult->rating;
+    	$reference = $placeResult->reference;
+    	$adrAddress = $placeResult->adr_address;
+    	$formattedPhoneNumber = $placeResult->formatted_phone_number;
+        $internationalPhoneNumber = $placeResult->international_phone_number;
+        $url = $placeResult->url;
+        $utcOffset = $placeResult->utc_offset;
+        $vicinity = $placeResult->vicinity;
+        $website = $placeResult->website;
+        $openingHours = null;
+
+        if (isset($placeResult->opening_hours)) {
+            $openingHours = $this->buildOpeningHours($placeResult->opening_hours);
+        }
+
+    	return new PlaceResult($addressComponents, $formattedAddress, $geometry, $adrAddress, $formattedPhoneNumber,
+    			$icon, $id, $internationalPhoneNumber, $name, $photos, $placeId, $rating, $reference, $reviews,
+    			$url, $types, $utcOffset, $vicinity, $website, $openingHours);
     }
 }

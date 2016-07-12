@@ -36,6 +36,18 @@ class Geocoder extends BaseGeocoder
     /**
      * {@inheritdoc}
      */
+    public function place($request)
+    {
+    	if ($this->getProvider() instanceof GeocoderProvider) {
+    	    $this->getProvider()->setType('place');
+    	}
+
+    	return parent::place($request);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function reverse($latitude, $longitude)
     {
         if ($this->getProvider() instanceof GeocoderProvider) {

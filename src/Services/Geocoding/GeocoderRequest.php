@@ -38,6 +38,12 @@ class GeocoderRequest
     /** @var string */
     protected $language;
 
+    /** @var string */
+    protected $placeId;
+
+    /** @var string */
+    protected $placeName;
+
     /** @var boolean */
     protected $sensor;
 
@@ -83,6 +89,68 @@ class GeocoderRequest
         }
 
         $this->address = $address;
+    }
+
+    /**
+     * Checks if the geocoder request has an placeid.
+     *
+     * @return boolean TRUE if the geocoder request has an address else FALSE.
+     */
+    public function hasPlaceId()
+    {
+    	return $this->placeId !== null;
+    }
+
+    /**
+     * Gets the geocoder request place id.
+     *
+     * @return string The geocoder request place id.
+     */
+    public function getPlaceId()
+    {
+    	return $this->placeId;
+    }
+
+    /**
+     * Sets the geocoder request place id.
+     *
+     * @param string $address The geocoder request place id.
+     *
+     */
+    public function setPlaceId($placeId)
+    {
+    	$this->placeId = $placeId;
+    }
+
+    /**
+     * Checks if the geocoder request has an place name.
+     *
+     * @return boolean TRUE if the geocoder request has an address else FALSE.
+     */
+    public function hasPlaceName()
+    {
+    	return $this->placeName !== null;
+    }
+
+    /**
+     * Gets the geocoder request place name.
+     *
+     * @return string The geocoder request place name.
+     */
+    public function getPlaceName()
+    {
+    	return $this->placeName;
+    }
+
+    /**
+     * Sets the geocoder request place name.
+     *
+     * @param string $address The geocoder request placeName.
+     *
+     */
+    public function setPlaceName($placeName)
+    {
+    	$this->placeName = $placeName;
     }
 
     /**
@@ -323,6 +391,6 @@ class GeocoderRequest
      */
     public function isValid()
     {
-        return $this->hasAddress() || $this->hasCoordinate();
+        return $this->hasAddress() || $this->hasCoordinate() || $this->hasPlaceId() || $this->hasPlaceName();
     }
 }

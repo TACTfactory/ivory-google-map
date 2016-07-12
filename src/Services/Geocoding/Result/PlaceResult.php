@@ -3,7 +3,7 @@
 /*
  * This file is part of the Ivory Google Map package.
  *
- * (c) Eric GELOEN <geloen.eric@gmail.com>
+ * (c) Nicolas Rauflet <rauflet.nicolas@outlook.fr>
  *
  * For the full copyright and license information, please read the LICENSE
  * file that was distributed with this source code.
@@ -14,30 +14,71 @@ namespace Ivory\GoogleMap\Services\Geocoding\Result;
 use Ivory\GoogleMap\Exception\GeocodingException;
 
 /**
- * Geocoder result which describes a google map geocoder result.
+ * Place result which describes a google map place result.
  *
- * @see http://code.google.com/apis/maps/documentation/javascript/reference.html#GeocoderResult
- * @author GeLo <geloen.eric@gmail.com>
+ * @author Nicolas Rauflet <rauflet.nicolas@outlook.fr>
  */
-class GeocoderResult
+class PlaceResult
 {
     /** @var array */
-    protected $addressComponents;
+    protected $address_components;
+
+    /** @var string */
+    protected $adrAddress;
 
     /** @var string */
     protected $formattedAddress;
 
+    /** @var string */
+    protected $formatedPhoneNumber;
+
     /** @var \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderGeometry */
     protected $geometry;
 
-    /** @var boolean */
-    protected $partialMatch;
+    /** @var string */
+    protected $icon;
+
+    /** @var string */
+    protected $id;
+
+    /** @var string */
+    protected $internationalPhoneNumber;
+
+    /** @var string */
+    protected $name;
+
+    /** @var array */
+    protected $photos;
+
+    /** @var string */
+    protected $placeId;
+
+    /** @var string */
+    protected $rating;
+
+    /** @var string */
+    protected $reference;
+
+    /** @var array */
+    protected $reviews;
 
     /** @var array */
     protected $types;
 
-    /** @var array */
-    protected $placeId;
+    /** @var string */
+    protected $url;
+
+    /** @var string */
+    protected $utcOffset;
+
+    /** @var string */
+    protected $vinicity;
+
+    /** @var string */
+    protected $website;
+
+    /** @var PlaceOpeningHours */
+    protected $openingHours;
 
     /**
      * Create a gecoder result.
@@ -48,20 +89,31 @@ class GeocoderResult
      * @param array                                                       $types             The types.
      * @param boolean                                                     $partialMatch      The partial match flag.
      */
-    public function __construct(
-        array $addressComponents,
-        $formattedAddress,
-        GeocoderGeometry $geometry,
-        array $types,
-        $partialMatch = null,
-        $placeId
-    ) {
+    public function __construct(array $addressComponents, $formattedAddress, GeocoderGeometry $geometry, $adrAddress,
+            $formatedPhoneNumber, $icon, $id, $internationalPhoneNumber, $name, array $photos,
+            $placeId, $rating, $reference, $reviews, $url, array $types, $utcOffset, $vinicity, $website,
+            $openingHours) {
         $this->setAddressComponents($addressComponents);
         $this->setFormattedAddress($formattedAddress);
         $this->setGeometry($geometry);
+        $this->adrAddress = $adrAddress;
+        $this->formatedPhoneNumber = $formatedPhoneNumber;
+        $this->icon = $icon;
+        $this->id = $id;
+        $this->internationalPhoneNumber = $internationalPhoneNumber;
+        $this->name = $name;
+        $this->photos = $photos;
+        $this->placeId = $placeId;
+        $this->rating = $rating;
+        $this->reference = $reference;
+        $this->reviews = $reviews;
+        $this->url = $url;
+        $this->utcOffset = $utcOffset;
+        $this->vinicity = $vinicity;
+        $this->website = $website;
         $this->setTypes($types);
-        $this->setPartialMatch($partialMatch);
         $this->setPlaceId($placeId);
+        $this->openingHours = $openingHours;
     }
 
     /**
@@ -132,10 +184,6 @@ class GeocoderResult
      */
     public function setFormattedAddress($formattedAddress)
     {
-        if (!is_string($formattedAddress)) {
-            throw GeocodingException::invalidGeocoderResultFormattedAddress();
-        }
-
         $this->formattedAddress = $formattedAddress;
     }
 
@@ -160,16 +208,6 @@ class GeocoderResult
     }
 
     /**
-     * Checks if the geocoder result is a partial match.
-     *
-     * @return boolean TRUE if the geocoder result is a partial match else FALSE.
-     */
-    public function isPartialMatch()
-    {
-        return $this->partialMatch;
-    }
-
-    /**
      * Sets the geocoder result placeId.
      *
      */
@@ -185,22 +223,6 @@ class GeocoderResult
     public function getPlaceId()
     {
         return $this->placeId;
-    }
-
-    /**
-     * Sets the geocoder result partial match flag.
-     *
-     * @param boolean $partialMatch TRUE if the geocoder result is a partial match else FALSE.
-     *
-     * @throws \Ivory\GoogleMap\Exception\GeocodingException If the partial match flag is not valid.
-     */
-    public function setPartialMatch($partialMatch = null)
-    {
-        if (!is_bool($partialMatch) && ($partialMatch !== null)) {
-            throw GeocodingException::invalidGeocoderResultPartialMatch();
-        }
-
-        $this->partialMatch = $partialMatch;
     }
 
     /**

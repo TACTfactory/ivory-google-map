@@ -46,6 +46,7 @@ class GeocoderLocationType
             self::GEOMETRIC_CENTER,
             self::RANGE_INTERPOLATED,
             self::ROOFTOP,
+            null
         );
     }
 }
