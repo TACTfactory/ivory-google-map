@@ -400,7 +400,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         if ($this->getType() == "default") {
             $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
         } else if ($this->getType() == "place") {
-            $httpQuery['key'] ="AIzaSyDHxld3QsfgnlHs9k2c9nPH4BVZzWlkb1U";
+            $httpQuery['key'] = $this->locale;
 
             if ($geocoderRequest->hasPlaceId()) {
             	$apiUrl = $this->getPlaceUrlDetails();
