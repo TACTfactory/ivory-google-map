@@ -45,4 +45,15 @@ class PlaceOpeningHours
         $this->weekdayText = $weekdayText;
     }
 
+    public function getOpenNow() {
+        return $this->openNow;
+    }
+    
+    public function getPeriods() {
+        return $this->periods;
+    }
+    
+    public function getWeekdayText() {
+        return $this->weekdayText;
+    }
 }

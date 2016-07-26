@@ -39,4 +39,12 @@ class PlacePeriods
         $this->open = $open;
         $this->close = $close;
     }
+    
+    public function getOpen() {
+        return $this->open;
+    }
+    
+    public function getClose() {
+        return $this->close;
+    }
 }

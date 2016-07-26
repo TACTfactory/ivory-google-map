@@ -113,11 +113,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function getPlaceUrl()
     {
-    	if ($this->isHttps()) {
-    		return str_replace('http://', 'https://', $this->placeUrl);
-    	}
+        if ($this->isHttps()) {
+            return str_replace('http://', 'https://', $this->placeUrl);
+        }
 
-    	return $this->placeUrl;
+        return $this->placeUrl;
     }
 
     /**
@@ -128,11 +128,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function setPlaceUrl($placeUrl)
     {
-    	if (!is_string($placeUrl)) {
-    		throw GeocodingException::invalidGeocoderProviderUrl();
-    	}
+        if (!is_string($placeUrl)) {
+            throw GeocodingException::invalidGeocoderProviderUrl();
+        }
 
-    	$this->placeUrl = $placeUrl;
+        $this->placeUrl = $placeUrl;
     }
 
     /**
@@ -141,11 +141,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function getPlaceUrlDetails()
     {
-    	if ($this->isHttps()) {
-    		return str_replace('http://', 'https://', $this->placeUrlDetails);
-    	}
+        if ($this->isHttps()) {
+            return str_replace('http://', 'https://', $this->placeUrlDetails);
+        }
 
-    	return $this->placeUrlDetails;
+        return $this->placeUrlDetails;
     }
 
     /**
@@ -165,7 +165,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function getType()
     {
-    	return $this->type;
+        return $this->type;
     }
 
     /**
@@ -176,7 +176,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function setType($type)
     {
-    	$this->type = $type;
+        $this->type = $type;
     }
 
     /**
@@ -288,10 +288,10 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     public function getGeocodedData($request)
     {
-    	$geocoderRequest = new GeocoderRequest();
+        $geocoderRequest = new GeocoderRequest();
 
         if ($this->type == "place") {
-        	$geocoderRequest->setPlaceName($request);
+            $geocoderRequest->setPlaceName($request);
         } else if (is_string($request)) {
             $geocoderRequest->setAddress($request);
         } elseif ($request instanceof GeocoderRequest) {
@@ -316,15 +316,15 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         if ($this->getType() == "place") {
             $geocoderRequest->setPlaceId($this->getPlaceId($normalizedResponse));
 
-        	$url = $this->generateUrl($geocoderRequest);
+            $url = $this->generateUrl($geocoderRequest);
 
-        	$responseDetail = $this->getAdapter()->getContent($url);
+            $responseDetail = $this->getAdapter()->getContent($url);
 
-        	$dataResponse = $this->parse($responseDetail);
+            $dataResponse = $this->parse($responseDetail);
 
-        	$response = $this->buildPlaceResponse($dataResponse);
+            $response = $this->buildPlaceResponse($dataResponse);
         } else {
-        	$response = $this->buildGeocoderResponse($normalizedResponse);
+            $response = $this->buildGeocoderResponse($normalizedResponse);
         }
 
         return $response;
@@ -390,11 +390,11 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         }
 
         if ($geocoderRequest->hasPlaceId()) {
-        	$httpQuery['placeid'] = $geocoderRequest->getPlaceId();
+            $httpQuery['placeid'] = $geocoderRequest->getPlaceId();
         }
 
         if ($geocoderRequest->hasPlaceName() && !$geocoderRequest->hasPlaceId()) {
-        	$httpQuery['query'] = $geocoderRequest->getPlaceName();
+            $httpQuery['query'] = $geocoderRequest->getPlaceName();
         }
 
         if ($this->getType() == "default") {
@@ -403,7 +403,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $httpQuery['key'] = $this->locale;
 
             if ($geocoderRequest->hasPlaceId()) {
-            	$apiUrl = $this->getPlaceUrlDetails();
+                $apiUrl = $this->getPlaceUrlDetails();
             } else {
                 $apiUrl = $this->getPlaceUrl();
             }
@@ -594,13 +594,13 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildPlacePhotos(array $placePhotos)
     {
-    	$results = array();
+        $results = array();
 
-    	foreach ($placePhotos as $placePhoto) {
-    		$results[] = $this->buildPlacePhotosComponent($placePhoto);
-    	}
+        foreach ($placePhotos as $placePhoto) {
+            $results[] = $this->buildPlacePhotosComponent($placePhoto);
+        }
 
-    	return $results;
+        return $results;
     }
 
     /**
@@ -613,12 +613,12 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildPlacePhotosComponent(\stdClass $buildPlacePhotoComponent)
     {
-    	$height = $buildPlacePhotoComponent->height;
-    	$width = $buildPlacePhotoComponent->width;
-    	$htmlAttribution = $buildPlacePhotoComponent->html_attributions;
-    	$photoReference = $buildPlacePhotoComponent->photo_reference;
+        $height = $buildPlacePhotoComponent->height;
+        $width = $buildPlacePhotoComponent->width;
+        $htmlAttribution = $buildPlacePhotoComponent->html_attributions;
+        $photoReference = $buildPlacePhotoComponent->photo_reference;
 
-    	return new PlacePhoto($height, $width, $htmlAttribution, $photoReference);
+        return new PlacePhoto($height, $width, $htmlAttribution, $photoReference);
     }
 
     /**
@@ -630,19 +630,19 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildOpeningHours(\stdClass $placeResult)
     {
-    	$results = array();
+        $results = array();
 
-    	$openNow = null;
+        $openNow = null;
 
-    	if (isset($placeResult->open_now)) {
+        if (isset($placeResult->open_now)) {
             $openNow = $placeResult->open_now;
-    	}
+        }
 
-    	foreach ($placeResult->periods as $openingHour) {
-    		$periods[] = $this->buildOpeningHoursComponent($openingHour);
-    	}
+        foreach ($placeResult->periods as $openingHour) {
+            $periods[] = $this->buildOpeningHoursComponent($openingHour);
+        }
 
-    	return new PlaceOpeningHours($openNow, $periods, null);
+        return new PlaceOpeningHours($openNow, $periods, null);
     }
 
     /**
@@ -669,16 +669,16 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function getPlaceId(\stdClass $placeResponse)
     {
-    	$results = array();
-    	$placeId = "";
+        $results = array();
+        $placeId = "";
 
-    	foreach ($placeResponse->results as $placeResult) {
-    		$placeId = $placeResult->place_id;
-    	}
+        foreach ($placeResponse->results as $placeResult) {
+            $placeId = $placeResult->place_id;
+        }
 
-    	$status = $placeResponse->status;
+        $status = $placeResponse->status;
 
-    	return $placeId;
+        return $placeId;
     }
 
     /**
@@ -690,13 +690,13 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildPlaceResponse(\stdClass $placeResponse)
     {
-    	$results = array();
+        $results = array();
 
-    	$results[] = $this->buildPlaceResult($placeResponse->result);
+        $results[] = $this->buildPlaceResult($placeResponse->result);
 
-    	$status = $placeResponse->status;
+        $status = $placeResponse->status;
 
-    	return new PlaceResponse($results, $status);
+        return new PlaceResponse($results, $status);
     }
 
     /**
@@ -708,33 +708,70 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildPlaceResult(\stdClass $placeResult)
     {
-    	$addressComponents = $this->buildGeocoderAddressComponents($placeResult->address_components);
-    	$formattedAddress = $placeResult->formatted_address;
-    	$geometry = $this->buildGeocoderGeometry($placeResult->geometry);
-    	$types = $placeResult->types;
-    	$placeId = $placeResult->place_id;
-    	$icon = $placeResult->icon;
-    	$id = $placeResult->id;
-    	$name = $placeResult->name;
-    	$photos = $this->buildPlacePhotos($placeResult->photos);
-    	$reviews = $placeResult->reviews;
-    	$rating = $placeResult->rating;
-    	$reference = $placeResult->reference;
-    	$adrAddress = $placeResult->adr_address;
-    	$formattedPhoneNumber = $placeResult->formatted_phone_number;
-        $internationalPhoneNumber = $placeResult->international_phone_number;
-        $url = $placeResult->url;
-        $utcOffset = $placeResult->utc_offset;
-        $vicinity = $placeResult->vicinity;
-        $website = $placeResult->website;
+        $addressComponents = null;
+        $formattedAddress = null;
+        $geometry = null;
+        $types = null;
+        $placeId = null;
+        $icon = null;
+        $id = null;
+        $name = null;
+        $photos = null;
+        $reviews = null;
+        $rating = null;
+        $reference = null;
+        $adrAddress = null;
+        $formattedPhoneNumber = null;
+        $internationalPhoneNumber = null;
+        $url = null;
+        $utcOffset = null;
+        $vicinity = null;
+        $website = null;
         $openingHours = null;
-
-        if (isset($placeResult->opening_hours)) {
+        
+        if (isset($placeResult->address_components))
+            $addressComponents = $this->buildGeocoderAddressComponents($placeResult->address_components);
+        if (isset($placeResult->formatted_address))
+            $formattedAddress = $placeResult->formatted_address;
+        if (isset($placeResult->geometry))
+            $geometry = $this->buildGeocoderGeometry($placeResult->geometry);
+        if (isset($placeResult->types))
+            $types = $placeResult->types;
+        if (isset($placeResult->place_id))
+            $placeId = $placeResult->place_id;
+        if (isset($placeResult->icon))
+            $icon = $placeResult->icon;
+        if (isset($placeResult->id))
+            $id = $placeResult->id;
+        if (isset($placeResult->name))
+            $name = $placeResult->name;
+        if (isset($placeResult->photos))
+            $photos = $this->buildPlacePhotos($placeResult->photos);
+        if (isset($placeResult->reviews))
+            $reviews = $placeResult->reviews;
+        if (isset($placeResult->rating))
+            $rating = $placeResult->rating;
+        if (isset($placeResult->reference))
+            $reference = $placeResult->reference;
+        if (isset($placeResult->adr_address))
+            $adrAddress = $placeResult->adr_address;
+        if (isset($placeResult->formatted_phone_number))
+            $formattedPhoneNumber = $placeResult->formatted_phone_number;
+        if (isset($placeResult->international_phone_number))
+            $internationalPhoneNumber = $placeResult->international_phone_number;
+        if (isset($placeResult->url))
+            $url = $placeResult->url;
+        if (isset($placeResult->utc_offset))
+            $utcOffset = $placeResult->utc_offset;
+        if (isset($placeResult->vicinity))
+            $vicinity = $placeResult->vicinity;
+        if (isset($placeResult->website))
+            $website = $placeResult->website;
+        if (isset($placeResult->opening_hours))
             $openingHours = $this->buildOpeningHours($placeResult->opening_hours);
-        }
 
-    	return new PlaceResult($addressComponents, $formattedAddress, $geometry, $adrAddress, $formattedPhoneNumber,
-    			$icon, $id, $internationalPhoneNumber, $name, $photos, $placeId, $rating, $reference, $reviews,
-    			$url, $types, $utcOffset, $vicinity, $website, $openingHours);
+        return new PlaceResult($addressComponents, $formattedAddress, $geometry, $adrAddress, $formattedPhoneNumber,
+                $icon, $id, $internationalPhoneNumber, $name, $photos, $placeId, $rating, $reference, $reviews,
+                $url, $types, $utcOffset, $vicinity, $website, $openingHours);
     }
 }

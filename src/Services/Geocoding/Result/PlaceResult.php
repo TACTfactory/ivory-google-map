@@ -264,4 +264,66 @@ class PlaceResult
 
         $this->types[] = $type;
     }
+    
+    
+    /** @var string */
+    public function getAdrAddress() {
+        return $this->adrAddress;
+    }
+    
+    public function getFormatedPhoneNumber() {
+        return $this->formatedPhoneNumber;
+    }
+    
+    public function getIcon() {
+        return $this->icon;
+    }
+    
+    public function getId() {
+        $this->id;
+    }
+    
+    public function getInternationalPhoneNumber() {
+        return $this->internationalPhoneNumber;
+    }
+    
+    public function getName() {
+        return $this->name;
+    }
+    
+    public function getPhotos() {
+        return $this->photos;
+    }
+    
+    public function getRating() {
+        return $this->rating;
+    }
+    
+    public function getReference() {
+        return $this->reference;
+    }
+    
+    public function getReviews() {
+        return $this->reviews;
+    }
+    
+    public function getUrl() {
+        return $this->$url;
+    }
+    
+    public function getUtcOffset() {
+        return $this->utcOffset;
+    }
+    
+    public function getVinicity() {
+        return $this->vinicity;
+    }
+    
+    public function getWebsite() {
+        return $this->website;
+    }
+    
+    public function getOpeningHours() {
+        return $this->openingHours;
+    }
 }

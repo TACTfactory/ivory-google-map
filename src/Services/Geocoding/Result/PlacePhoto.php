@@ -118,7 +118,7 @@ class PlacePhoto
      */
     public function getPhotoReference()
     {
-        return $this->bound;
+        return $this->photoReference;
     }
 
     /**
