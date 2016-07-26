@@ -42,7 +42,10 @@ class Geocoder extends BaseGeocoder
     	    $this->getProvider()->setType('place');
     	}
 
-    	return parent::place($request);
+    	$provider = $this->getProvider()->setMaxResults($this->getMaxResults());
+    	$data     = $provider->getGeocodedData(trim($value));
+
+    	return $data;
     }
 
     /**
