@@ -290,7 +290,9 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     {
         $geocoderRequest = new GeocoderRequest();
 
-        if ($this->type == "place") {
+        if ($this->type == "place_id") {
+            $geocoderRequest->setPlaceId($request);
+        } else if ($this->type == "place") {
             $geocoderRequest->setPlaceName($request);
         } else if (is_string($request)) {
             $geocoderRequest->setAddress($request);
@@ -317,12 +319,17 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $geocoderRequest->setPlaceId($this->getPlaceId($normalizedResponse));
 
             $url = $this->generateUrl($geocoderRequest);
+            $response = $this->getAdapter()->getContent($url);
 
-            $responseDetail = $this->getAdapter()->getContent($url);
+            if ($response === null) {
+                throw GeocodingException::invalidServiceResult();
+            }
 
-            $dataResponse = $this->parse($responseDetail);
+            $normalizedResponse = $this->parse($response);
 
-            $response = $this->buildPlaceResponse($dataResponse);
+            $response = $this->buildPlaceResponse($normalizedResponse);
+        } else if ($this->getType() == "place_id") {
+            $response = $this->buildPlaceResponse($normalizedResponse);
         } else {
             $response = $this->buildGeocoderResponse($normalizedResponse);
         }
@@ -399,7 +406,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         if ($this->getType() == "default") {
             $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
-        } else if ($this->getType() == "place") {
+        } else if ($this->getType() == "place" || $this->getType() == "place_id") {
             $httpQuery['key'] = $this->locale;
 
             if ($geocoderRequest->hasPlaceId()) {
@@ -558,6 +565,10 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildGeocoderGeometry(\stdClass $geocoderGeometry)
     {
+        $bound = new Bound();
+        $locationType = null;
+        $viewport = new Bound();
+
         $location = new Coordinate(
             $geocoderGeometry->location->lat,
             $geocoderGeometry->location->lng
@@ -565,16 +576,16 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         if (isset($geocoderGeometry->location_type)) {
             $locationType = $geocoderGeometry->location_type;
-        } else {
-            $locationType = null;
         }
 
-        $viewport = new Bound(
-            new Coordinate($geocoderGeometry->viewport->southwest->lat, $geocoderGeometry->viewport->southwest->lng),
-            new Coordinate($geocoderGeometry->viewport->northeast->lat, $geocoderGeometry->viewport->northeast->lng)
-        );
+        if (isset($geocoderGeometry->viewport)) {
+            $viewport = new Bound(
+                new Coordinate($geocoderGeometry->viewport->southwest->lat, $geocoderGeometry->viewport->southwest->lng),
+                new Coordinate($geocoderGeometry->viewport->northeast->lat, $geocoderGeometry->viewport->northeast->lng)
+            );
+        }
 
-        $bound = null;
+
         if (isset($geocoderGeometry->bounds)) {
             $bound = new Bound(
                 new Coordinate($geocoderGeometry->bounds->southwest->lat, $geocoderGeometry->bounds->southwest->lng),
@@ -654,8 +665,16 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildOpeningHoursComponent(\stdClass $openingHoursComponent)
     {
-        $open = new PlaceOpenClose($openingHoursComponent->open->day, $openingHoursComponent->open->time);
-        $close = new PlaceOpenClose($openingHoursComponent->close->day, $openingHoursComponent->close->time);
+        $open = null;
+        $close = null;
+
+        if (isset($openingHoursComponent->open)) {
+            $open = new PlaceOpenClose($openingHoursComponent->open->day, $openingHoursComponent->open->time);
+        }
+
+        if (isset($openingHoursComponent->close)) {
+            $close = new PlaceOpenClose($openingHoursComponent->close->day, $openingHoursComponent->close->time);
+        }
 
         return new PlacePeriods($open, $close);
     }
@@ -711,12 +730,12 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         $addressComponents = null;
         $formattedAddress = null;
         $geometry = null;
-        $types = null;
+        $types = array();
         $placeId = null;
         $icon = null;
         $id = null;
         $name = null;
-        $photos = null;
+        $photos = array();
         $reviews = null;
         $rating = null;
         $reference = null;
@@ -728,7 +747,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         $vicinity = null;
         $website = null;
         $openingHours = null;
-        
+
         if (isset($placeResult->address_components))
             $addressComponents = $this->buildGeocoderAddressComponents($placeResult->address_components);
         if (isset($placeResult->formatted_address))

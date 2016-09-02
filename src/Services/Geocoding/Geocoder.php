@@ -36,7 +36,7 @@ class Geocoder extends BaseGeocoder
     /**
      * {@inheritdoc}
      */
-    public function place($request)
+    public function placeByAddress($value)
     {
     	if ($this->getProvider() instanceof GeocoderProvider) {
     	    $this->getProvider()->setType('place');
@@ -46,6 +46,21 @@ class Geocoder extends BaseGeocoder
     	$data     = $provider->getGeocodedData(trim($value));
 
     	return $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function placeById($value)
+    {
+        if ($this->getProvider() instanceof GeocoderProvider) {
+            $this->getProvider()->setType('place_id');
+        }
+
+        $provider = $this->getProvider()->setMaxResults($this->getMaxResults());
+        $data     = $provider->getGeocodedData(trim($value));
+
+        return $data;
     }
 
     /**
