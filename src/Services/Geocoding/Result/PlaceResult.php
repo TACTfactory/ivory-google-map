@@ -89,11 +89,14 @@ class PlaceResult
      * @param array                                                       $types             The types.
      * @param boolean                                                     $partialMatch      The partial match flag.
      */
-    public function __construct(array $addressComponents, $formattedAddress, GeocoderGeometry $geometry, $adrAddress,
+    public function __construct($addressComponents, $formattedAddress, GeocoderGeometry $geometry, $adrAddress,
             $formatedPhoneNumber, $icon, $id, $internationalPhoneNumber, $name, array $photos,
             $placeId, $rating, $reference, $reviews, $url, array $types, $utcOffset, $vinicity, $website,
             $openingHours) {
-        $this->setAddressComponents($addressComponents);
+        if ($addressComponents != null) {
+            $this->setAddressComponents($addressComponents);
+        }
+
         $this->setFormattedAddress($formattedAddress);
         $this->setGeometry($geometry);
         $this->adrAddress = $adrAddress;
@@ -264,65 +267,65 @@ class PlaceResult
 
         $this->types[] = $type;
     }
-    
-    
+
+
     /** @var string */
     public function getAdrAddress() {
         return $this->adrAddress;
     }
-    
+
     public function getFormatedPhoneNumber() {
         return $this->formatedPhoneNumber;
     }
-    
+
     public function getIcon() {
         return $this->icon;
     }
-    
+
     public function getId() {
         $this->id;
     }
-    
+
     public function getInternationalPhoneNumber() {
         return $this->internationalPhoneNumber;
     }
-    
+
     public function getName() {
         return $this->name;
     }
-    
+
     public function getPhotos() {
         return $this->photos;
     }
-    
+
     public function getRating() {
         return $this->rating;
     }
-    
+
     public function getReference() {
         return $this->reference;
     }
-    
+
     public function getReviews() {
         return $this->reviews;
     }
-    
+
     public function getUrl() {
         return $this->$url;
     }
-    
+
     public function getUtcOffset() {
         return $this->utcOffset;
     }
-    
+
     public function getVinicity() {
         return $this->vinicity;
     }
-    
+
     public function getWebsite() {
         return $this->website;
     }
-    
+
     public function getOpeningHours() {
         return $this->openingHours;
     }

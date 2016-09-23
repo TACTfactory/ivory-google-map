@@ -56,6 +56,9 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     protected $placeUrl;
 
     /** @var string */
+    protected $placeNearbyUrl;
+
+    /** @var string */
     protected $placeUrlDetails;
 
     /** @var string */
@@ -70,6 +73,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         $this->setUrl('http://maps.googleapis.com/maps/api/geocode');
         $this->setPlaceUrl('https://maps.googleapis.com/maps/api/place/textsearch');
+        $this->setPlaceNearbyUrl('https://maps.googleapis.com/maps/api/place/nearbysearch');
         $this->setPlaceUrlDetails('https://maps.googleapis.com/maps/api/place/details');
         $this->setType('default');
         $this->setHttps(false);
@@ -133,6 +137,34 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         }
 
         $this->placeUrl = $placeUrl;
+    }
+
+    /**
+     * Gets the service place nearby url according to the https flag.
+     *
+     */
+    public function getPlaceNearbyUrl()
+    {
+        if ($this->isHttps()) {
+            return str_replace('http://', 'https://', $this->placeNearbyUrl);
+        }
+
+        return $this->placeNearbyUrl;
+    }
+
+    /**
+     * Sets the service url.
+     *
+     * @param string $url The service url.
+     *
+     */
+    public function setPlaceNearbyUrl($placeNearbyUrl)
+    {
+        if (!is_string($placeNearbyUrl)) {
+            throw GeocodingException::invalidGeocoderProviderUrl();
+        }
+
+        $this->placeNearbyUrl = $placeNearbyUrl;
     }
 
     /**
@@ -290,7 +322,9 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     {
         $geocoderRequest = new GeocoderRequest();
 
-        if ($this->type == "place_id") {
+        if ($this->type == "nearby") {
+            $geocoderRequest->setCoordinate($request[0], $request[1]);
+        } else if ($this->type == "place_id") {
             $geocoderRequest->setPlaceId($request);
         } else if ($this->type == "place") {
             $geocoderRequest->setPlaceName($request);
@@ -330,6 +364,8 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $response = $this->buildPlaceResponse($normalizedResponse);
         } else if ($this->getType() == "place_id") {
             $response = $this->buildPlaceResponse($normalizedResponse);
+        } else if ($this->getType() == "nearby") {
+            $response = $this->buildPlacesResponse($normalizedResponse);
         } else {
             $response = $this->buildGeocoderResponse($normalizedResponse);
         }
@@ -371,7 +407,13 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         if ($geocoderRequest->hasAddress()) {
             $httpQuery['address'] = $geocoderRequest->getAddress();
         } else if ($geocoderRequest->hasCoordinate()){
-            $httpQuery['latlng'] = sprintf(
+            $queryParam = 'latlng';
+
+            if ($this->getType() == "nearby") {
+                $queryParam = 'location';
+            }
+
+            $httpQuery[$queryParam] = sprintf(
                 '%s,%s',
                 $geocoderRequest->getCoordinate()->getLatitude(),
                 $geocoderRequest->getCoordinate()->getLongitude()
@@ -406,10 +448,15 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         if ($this->getType() == "default") {
             $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
-        } else if ($this->getType() == "place" || $this->getType() == "place_id") {
+        } else if ($this->getType() == "place" || $this->getType() == "place_id" || $this->getType() == "nearby") {
             $httpQuery['key'] = $this->locale;
 
-            if ($geocoderRequest->hasPlaceId()) {
+            if ($this->getType() == "nearby") {
+                $apiUrl = $this->getPlaceNearbyUrl();
+
+                $httpQuery["rankby"] = "distance";
+                $httpQuery["types"] = "establishment";
+            } else if ($geocoderRequest->hasPlaceId()) {
                 $apiUrl = $this->getPlaceUrlDetails();
             } else {
                 $apiUrl = $this->getPlaceUrl();
@@ -511,9 +558,18 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
      */
     protected function buildGeocoderResult(\stdClass $geocoderResult)
     {
-        $addressComponents = $this->buildGeocoderAddressComponents($geocoderResult->address_components);
-        $formattedAddress = $geocoderResult->formatted_address;
-        $geometry = $this->buildGeocoderGeometry($geocoderResult->geometry);
+        $addressComponents = array();
+        $geometry = null;
+
+        if (isset($geocoderResult->address_components)) {
+            $addressComponents = $this->buildGeocoderAddressComponents($geocoderResult->address_components);
+        }
+
+        if (isset($geocoderResult->geometry)) {
+            $geometry = $this->buildGeocoderGeometry($geocoderResult->geometry);
+        }
+
+        $formattedAddress = isset($geocoderResult->formatted_address) ? $geocoderResult->formatted_address : null;
         $types = $geocoderResult->types;
         $placeId = $geocoderResult->place_id;
         $partialMatch = isset($geocoderResult->partial_match) ? $geocoderResult->partial_match : null;
@@ -644,13 +700,16 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         $results = array();
 
         $openNow = null;
+        $periods = array();
 
         if (isset($placeResult->open_now)) {
             $openNow = $placeResult->open_now;
         }
 
-        foreach ($placeResult->periods as $openingHour) {
-            $periods[] = $this->buildOpeningHoursComponent($openingHour);
+        if (isset($placeResult->periods)) {
+            foreach ($placeResult->periods as $openingHour) {
+                $periods[] = $this->buildOpeningHoursComponent($openingHour);
+            }
         }
 
         return new PlaceOpeningHours($openNow, $periods, null);
@@ -714,6 +773,26 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         $results[] = $this->buildPlaceResult($placeResponse->result);
 
         $status = $placeResponse->status;
+
+        return new PlaceResponse($results, $status);
+    }
+
+    /**
+     * Builds the geocoder results accordint to a normalized geocoding results.
+     *
+     * @param \stdClass $geocoderResponse The normalized geocder response.
+     *
+     * @return \Ivory\GoogleMap\Services\Geocoding\Result\GeocoderResponse The builded geocoder response.
+     */
+    protected function buildPlacesResponse(\stdClass $placesResponse)
+    {
+        $results = array();
+
+        foreach ($placesResponse->results as $placeResponse) {
+            $results[] = $this->buildPlaceResult($placeResponse);
+        }
+
+        $status = $placesResponse->status;
 
         return new PlaceResponse($results, $status);
     }

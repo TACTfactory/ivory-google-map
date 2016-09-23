@@ -66,6 +66,21 @@ class Geocoder extends BaseGeocoder
     /**
      * {@inheritdoc}
      */
+    public function placesNearby($value)
+    {
+        if ($this->getProvider() instanceof GeocoderProvider) {
+            $this->getProvider()->setType('nearby');
+        }
+
+        $provider = $this->getProvider()->setMaxResults($this->getMaxResults());
+        $data     = $provider->getGeocodedData($value);
+
+        return $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function reverse($latitude, $longitude)
     {
         if ($this->getProvider() instanceof GeocoderProvider) {

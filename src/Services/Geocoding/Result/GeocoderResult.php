@@ -57,7 +57,11 @@ class GeocoderResult
         $placeId
     ) {
         $this->setAddressComponents($addressComponents);
-        $this->setFormattedAddress($formattedAddress);
+
+        if ($formattedAddress != null) {
+            $this->setFormattedAddress($formattedAddress);
+        }
+
         $this->setGeometry($geometry);
         $this->setTypes($types);
         $this->setPartialMatch($partialMatch);
