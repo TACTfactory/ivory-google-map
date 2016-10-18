@@ -450,6 +450,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
             $httpQuery['sensor'] = $geocoderRequest->hasSensor() ? 'true' : 'false';
         } else if ($this->getType() == "place" || $this->getType() == "place_id" || $this->getType() == "nearby") {
             $httpQuery['key'] = $this->locale;
+            $httpQuery['language'] = 'fr'; //force language TODO do it better
 
             if ($this->getType() == "nearby") {
                 $apiUrl = $this->getPlaceNearbyUrl();
