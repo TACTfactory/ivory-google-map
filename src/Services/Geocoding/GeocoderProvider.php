@@ -341,6 +341,7 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
         }
 
         $url = $this->generateUrl($geocoderRequest);
+
         $response = $this->getAdapter()->getContent($url);
 
         if ($response === null) {
@@ -771,7 +772,9 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
     {
         $results = array();
 
-        $results[] = $this->buildPlaceResult($placeResponse->result);
+        if (isset($placeResponse->result)) {
+            $results[] = $this->buildPlaceResult($placeResponse->result);
+        }
 
         $status = $placeResponse->status;
 

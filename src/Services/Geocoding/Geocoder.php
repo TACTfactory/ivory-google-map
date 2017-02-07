@@ -84,6 +84,7 @@ class Geocoder extends BaseGeocoder
     public function reverse($latitude, $longitude)
     {
         if ($this->getProvider() instanceof GeocoderProvider) {
+            $this->getProvider()->setType(null);
             return $this->getProvider()->getReversedData(array($latitude, $longitude));
         }
 
