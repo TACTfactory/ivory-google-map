@@ -47,6 +47,9 @@ class GeocoderRequest
     /** @var boolean */
     protected $sensor;
 
+    /** @var string */
+    protected $filterTypes;
+
     /**
      * Creates a geocoder request.
      */
@@ -382,6 +385,37 @@ class GeocoderRequest
         }
 
         $this->sensor = $sensor;
+    }
+
+    /**
+     * Checks if the geocoder request has a types filter.
+     *
+     * @return boolean TRUE if the geocoder request has a types filter else FALSE.
+     */
+    public function hasFilterTypes()
+    {
+        return $this->filterTypes !== null;
+    }
+
+    /**
+     * Gets the geocoder request types filter.
+     *
+     * @return string The geocoder request types filter.
+     */
+    public function getFilterTypes()
+    {
+        return $this->filterTypes;
+    }
+
+    /**
+     * Sets the geocoder request types filter.
+     *
+     * @param string $types The geocoder request types filter.
+     *
+     */
+    public function setFilterTypes($types)
+    {
+        $this->filterTypes = $types;
     }
 
     /**

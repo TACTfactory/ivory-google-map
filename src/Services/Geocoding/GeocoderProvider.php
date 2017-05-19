@@ -324,6 +324,10 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
 
         if ($this->type == "nearby") {
             $geocoderRequest->setCoordinate($request[0], $request[1]);
+
+            if (count($request) > 2) {
+                $geocoderRequest->setFilterTypes($request[2]);
+            }
         } else if ($this->type == "place_id") {
             $geocoderRequest->setPlaceId($request);
         } else if ($this->type == "place") {
@@ -457,7 +461,12 @@ class GeocoderProvider extends AbstractProvider implements ProviderInterface
                 $apiUrl = $this->getPlaceNearbyUrl();
 
                 $httpQuery["rankby"] = "distance";
-                $httpQuery["types"] = "establishment";
+
+                if ($geocoderRequest->hasFilterTypes()) {
+                    $httpQuery['types'] = $geocoderRequest->getFilterTypes();
+                } else {
+                    $httpQuery["types"] = "establishment";
+                }
             } else if ($geocoderRequest->hasPlaceId()) {
                 $apiUrl = $this->getPlaceUrlDetails();
             } else {
